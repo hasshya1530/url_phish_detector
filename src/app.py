@@ -1,29 +1,34 @@
-# src/app.py
-from flask import Flask, request, jsonify
-from extract_features import extract_url_features
-from predict_url import predict_url
+# src/predict_url.py
+import os
+import joblib
+import pandas as pd
 
-app = Flask(__name__)
+clf = None
+threshold = None
 
-@app.route("/")
-def home():
-    return "URL Phishing Detection API is live!"
+def load_model():
+    """Lazy-load model and threshold only once."""
+    global clf, threshold
+    if clf is None or threshold is None:
+        MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models")
+        clf_path = os.path.join(MODEL_DIR, "calibrated_clf.joblib")
+        threshold_path = os.path.join(MODEL_DIR, "suggested_threshold.joblib")
 
-@app.route("/predict", methods=["POST"])
-def predict():
+        if not os.path.exists(clf_path) or not os.path.exists(threshold_path):
+            raise FileNotFoundError(
+                f"Model files not found in {MODEL_DIR}. "
+                "Make sure 'calibrated_clf.joblib' and 'suggested_threshold.joblib' exist."
+            )
+
+        clf = joblib.load(clf_path)
+        threshold = joblib.load(threshold_path)
+
+def predict_url(features: dict):
     """
-    Accepts JSON body: {"url": "<URL_TO_CHECK>"}
-    Returns JSON: {"url": ..., "malicious_prob": ..., "prediction": ...}
+    Predict whether a URL is safe or malicious based on extracted features.
     """
-    data = request.get_json()
-    if not data or "url" not in data:
-        return jsonify({"error": "Please provide a 'url' in JSON body"}), 400
-
-    url = data["url"]
-    features = extract_url_features(url)
-    result = predict_url(features)
-    result["url"] = url
-    return jsonify(result)
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    load_model()
+    df = pd.DataFrame([features])
+    prob = clf.predict_proba(df)[:, 1][0]
+    pred = "malicious" if prob >= threshold else "safe"
+    return {"malicious_prob": float(prob), "prediction": pred}
