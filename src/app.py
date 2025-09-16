@@ -1,34 +1,24 @@
-# src/predict_url.py
-import os
-import joblib
-import pandas as pd
+# src/app.py
+from flask import Flask, request, jsonify
+from src.extract_features import extract_url_features
+from src.predict_url import predict_url
 
-clf = None
-threshold = None
+app = Flask(__name__)
 
-def load_model():
-    """Lazy-load model and threshold only once."""
-    global clf, threshold
-    if clf is None or threshold is None:
-        MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models")
-        clf_path = os.path.join(MODEL_DIR, "calibrated_clf.joblib")
-        threshold_path = os.path.join(MODEL_DIR, "suggested_threshold.joblib")
+@app.route("/")
+def index():
+    return "URL Phishing Detector API is live!"
 
-        if not os.path.exists(clf_path) or not os.path.exists(threshold_path):
-            raise FileNotFoundError(
-                f"Model files not found in {MODEL_DIR}. "
-                "Make sure 'calibrated_clf.joblib' and 'suggested_threshold.joblib' exist."
-            )
+@app.route("/predict", methods=["POST"])
+def predict():
+    data = request.get_json()
+    if not data or "url" not in data:
+        return jsonify({"error": "Please provide a 'url' in JSON body"}), 400
 
-        clf = joblib.load(clf_path)
-        threshold = joblib.load(threshold_path)
+    url = data["url"]
+    features = extract_url_features(url)
+    result = predict_url(features)
+    return jsonify(result)
 
-def predict_url(features: dict):
-    """
-    Predict whether a URL is safe or malicious based on extracted features.
-    """
-    load_model()
-    df = pd.DataFrame([features])
-    prob = clf.predict_proba(df)[:, 1][0]
-    pred = "malicious" if prob >= threshold else "safe"
-    return {"malicious_prob": float(prob), "prediction": pred}
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
