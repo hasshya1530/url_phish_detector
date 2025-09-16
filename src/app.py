@@ -1,25 +1,29 @@
-# src/app.py
 import os
-from flask import Flask, request, jsonify
-from predict_url import predict_url
+import joblib
+import numpy as np
+import pandas as pd
+import scipy.sparse as sp
 
-app = Flask(__name__)
+# Load models
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-@app.route('/')
-def home():
-    return "URL Phishing Detector API is running!"
+calibrated_path = os.path.join(BASE_DIR, "../models/calibrated_clf.joblib")
+threshold_path = os.path.join(BASE_DIR, "../models/suggested_threshold.joblib")
+lex_cols_path = os.path.join(BASE_DIR, "../models/lex_cols.joblib")
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    data = request.json
-    if not data:
-        return jsonify({'error': 'No input provided'}), 400
-    try:
-        result = predict_url(data)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+calibrated = joblib.load(calibrated_path)
+suggested_threshold = joblib.load(threshold_path)
+lex_cols = joblib.load(lex_cols_path)
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+# Feature extraction
+def extract_features(url_features: dict):
+    # url_features: dictionary of numeric features
+    lex_features = np.array([[url_features.get(col, 0) for col in lex_cols]])
+    return lex_features
+
+# Prediction
+def predict_url(url_features: dict):
+    X = extract_features(url_features)
+    prob = calibrated.predict_proba(X)[:, 1][0]
+    pred_label = "unsafe" if prob >= suggested_threshold else "safe"
+    return {"malicious_prob": float(prob), "prediction": pred_label}
