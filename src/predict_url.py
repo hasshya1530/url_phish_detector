@@ -2,12 +2,14 @@ import os
 import joblib
 import pandas as pd
 
-# Base directory of current file
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# ----------------------------
+# Use project root as base path
+# ----------------------------
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# This ensures models are always loaded from <repo_root>/models/
 
-# Load trained model and threshold from models folder
-clf = joblib.load(os.path.join(BASE_DIR, "../models/calibrated_clf.joblib"))
-threshold = joblib.load(os.path.join(BASE_DIR, "../models/suggested_threshold.joblib"))
+clf = joblib.load(os.path.join(PROJECT_ROOT, "models/calibrated_clf.joblib"))
+threshold = joblib.load(os.path.join(PROJECT_ROOT, "models/suggested_threshold.joblib"))
 
 def predict_url(features: dict):
     """
@@ -33,7 +35,9 @@ def predict_url(features: dict):
 
     return {"malicious_prob": float(prob), "prediction": pred}
 
+# ----------------------------
 # Example usage
+# ----------------------------
 if __name__ == "__main__":
     example_features = {
         "NumDots": 3,
