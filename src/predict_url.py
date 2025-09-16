@@ -1,10 +1,13 @@
-# src/predict_url.py
+import os
 import joblib
 import pandas as pd
 
-# Load trained model and threshold
-clf = joblib.load("../models/calibrated_clf.joblib")
-threshold = joblib.load("../models/suggested_threshold.joblib")
+# Base directory of current file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Load trained model and threshold from models folder
+clf = joblib.load(os.path.join(BASE_DIR, "../models/calibrated_clf.joblib"))
+threshold = joblib.load(os.path.join(BASE_DIR, "../models/suggested_threshold.joblib"))
 
 def predict_url(features: dict):
     """
@@ -12,22 +15,11 @@ def predict_url(features: dict):
 
     Args:
         features (dict): Keys are feature names from dataset (except 'id' and 'CLASS_LABEL').
-            Example:
-            {
-                "NumDots": 3,
-                "SubdomainLevel": 2,
-                "UrlLength": 50,
-                "NumDash": 1,
-                "NumDashInHostname": 0,
-                "AtSymbol": 0,
-                "TildeSymbol": 0,
-                ...
-            }
 
     Returns:
         dict: {
             "malicious_prob": float probability of being phishing,
-            "prediction": "malicious" or "safe"
+            "prediction": "unsafe" or "safe"
         }
     """
     # Convert single row to DataFrame
@@ -37,9 +29,9 @@ def predict_url(features: dict):
     prob = clf.predict_proba(df)[:, 1][0]
 
     # Apply threshold
-    pred = "malicious" if prob >= threshold else "safe"
+    pred = "unsafe" if prob >= threshold else "safe"
 
-    return {"malicious_prob": prob, "prediction": pred}
+    return {"malicious_prob": float(prob), "prediction": pred}
 
 # Example usage
 if __name__ == "__main__":
