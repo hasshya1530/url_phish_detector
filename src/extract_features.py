@@ -34,32 +34,37 @@ def extract_url_features(url: str) -> dict:
     features["PathLength"] = len(url.split("//")[-1].split("/")[1:]) if "/" in url.split("//")[-1] else 0
     features["QueryLength"] = len(url.split("?")[1]) if "?" in url else 0
     features["DoubleSlashInPath"] = 1 if "//" in url.split("://")[-1] else 0
-    features["NumSensitiveWords"] = 0
-    features["EmbeddedBrandName"] = 0
-    features["PctExtHyperlinks"] = 0.0
-    features["PctExtResourceUrls"] = 0.0
-    features["ExtFavicon"] = 0
-    features["InsecureForms"] = 0
-    features["RelativeFormAction"] = 0
-    features["ExtFormAction"] = 0
-    features["AbnormalFormAction"] = 0
-    features["PctNullSelfRedirectHyperlinks"] = 0.0
-    features["FrequentDomainNameMismatch"] = 0
-    features["FakeLinkInStatusBar"] = 0
-    features["RightClickDisabled"] = 0
-    features["PopUpWindow"] = 0
-    features["SubmitInfoToEmail"] = 0
-    features["IframeOrFrame"] = 0
-    features["MissingTitle"] = 0
-    features["ImagesOnlyInForm"] = 0
-    features["SubdomainLevelRT"] = 0
-    features["UrlLengthRT"] = 0
-    features["PctExtResourceUrlsRT"] = 0.0
-    features["AbnormalExtFormActionR"] = 0
-    features["ExtMetaScriptLinkRT"] = 0.0
-    features["PctExtNullSelfRedirectHyperlinksRT"] = 0.0
+
+    # Placeholder features (set to 0 or 0.0)
+    features.update({
+        "NumSensitiveWords": 0,
+        "EmbeddedBrandName": 0,
+        "PctExtHyperlinks": 0.0,
+        "PctExtResourceUrls": 0.0,
+        "ExtFavicon": 0,
+        "InsecureForms": 0,
+        "RelativeFormAction": 0,
+        "ExtFormAction": 0,
+        "AbnormalFormAction": 0,
+        "PctNullSelfRedirectHyperlinks": 0.0,
+        "FrequentDomainNameMismatch": 0,
+        "FakeLinkInStatusBar": 0,
+        "RightClickDisabled": 0,
+        "PopUpWindow": 0,
+        "SubmitInfoToEmail": 0,
+        "IframeOrFrame": 0,
+        "MissingTitle": 0,
+        "ImagesOnlyInForm": 0,
+        "SubdomainLevelRT": 0,
+        "UrlLengthRT": 0,
+        "PctExtResourceUrlsRT": 0.0,
+        "AbnormalExtFormActionR": 0,
+        "ExtMetaScriptLinkRT": 0.0,
+        "PctExtNullSelfRedirectHyperlinksRT": 0.0
+    })
 
     return features
+
 if __name__ == "__main__":
     test_url = "https://www.google.com"
     features = extract_url_features(test_url)
