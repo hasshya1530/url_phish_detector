@@ -1,29 +1,30 @@
-import os
-import joblib
-import numpy as np
-import pandas as pd
-import scipy.sparse as sp
+from flask import Flask, request, jsonify
+import logging
+from .predict_url import predict_url
 
-# Load models
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__)
 
-calibrated_path = os.path.join(BASE_DIR, "../models/calibrated_clf.joblib")
-threshold_path = os.path.join(BASE_DIR, "../models/suggested_threshold.joblib")
-lex_cols_path = os.path.join(BASE_DIR, "../models/lex_cols.joblib")
+# Setup logging
+logging.basicConfig(level=logging.INFO)
 
-calibrated = joblib.load(calibrated_path)
-suggested_threshold = joblib.load(threshold_path)
-lex_cols = joblib.load(lex_cols_path)
+@app.route("/")
+def home():
+    return "URL Phishing Detector API is running!"
 
-# Feature extraction
-def extract_features(url_features: dict):
-    # url_features: dictionary of numeric features
-    lex_features = np.array([[url_features.get(col, 0) for col in lex_cols]])
-    return lex_features
+@app.route("/predict", methods=["POST"])
+def predict():
+    data = request.get_json()
+    logging.info(f"Received data: {data}")
 
-# Prediction
-def predict_url(url_features: dict):
-    X = extract_features(url_features)
-    prob = calibrated.predict_proba(X)[:, 1][0]
-    pred_label = "unsafe" if prob >= suggested_threshold else "safe"
-    return {"malicious_prob": float(prob), "prediction": pred_label}
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    result = predict_url(data)
+    logging.info(f"Prediction result: {result}")
+
+    return jsonify(result)
+
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
