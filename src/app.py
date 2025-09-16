@@ -7,32 +7,23 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "URL Phishing Detector API is running!"
+    return "URL Phishing Detection API is live!"
 
 @app.route("/predict", methods=["POST"])
 def predict():
     """
-    Accepts a JSON body with a 'url' key.
-    Example:
-    {
-        "url": "https://www.google.com"
-    }
+    Accepts JSON body: {"url": "<URL_TO_CHECK>"}
+    Returns JSON: {"url": ..., "malicious_prob": ..., "prediction": ...}
     """
     data = request.get_json()
     if not data or "url" not in data:
         return jsonify({"error": "Please provide a 'url' in JSON body"}), 400
 
     url = data["url"]
-    
-    try:
-        # Extract features from the URL
-        features = extract_url_features(url)
-        # Predict safe/unsafe
-        result = predict_url(features)
-        result["url"] = url
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    features = extract_url_features(url)
+    result = predict_url(features)
+    result["url"] = url
+    return jsonify(result)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)
