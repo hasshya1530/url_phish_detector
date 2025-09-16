@@ -1,10 +1,7 @@
-# src/test_api.py
 import requests
-from extract_features import extract_url_features
 
-API_URL = "http://127.0.0.1:5000/predict"
-
-test_urls = [
+API_URL = "https://url-phish-detector-65xb.onrender.com/predict"  # your deployed URL
+urls = [
     "https://www.google.com",
     "http://paypal-login.fake.com",
     "https://secure-chase-login.com/account",
@@ -12,7 +9,10 @@ test_urls = [
     "https://github.com"
 ]
 
-for url in test_urls:
-    features = extract_url_features(url)
-    response = requests.post(API_URL, json=features)
-    print(f"URL: {url} -> {response.json()}")
+for url in urls:
+    try:
+        response = requests.post(API_URL, json={"url": url})
+        response.raise_for_status()
+        print(f"URL: {url} -> {response.json()}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error testing {url}: {e}")
