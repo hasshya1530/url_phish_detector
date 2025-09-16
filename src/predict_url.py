@@ -3,32 +3,57 @@ import os
 import joblib
 import pandas as pd
 
-clf = None
-threshold = None
+# ----------------------------
+# Project root path
+# ----------------------------
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_DIR = os.path.join(PROJECT_ROOT, "models")
 
-def load_model():
-    """Lazy-load model and threshold only once."""
-    global clf, threshold
-    if clf is None or threshold is None:
-        MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models")
-        clf_path = os.path.join(MODEL_DIR, "calibrated_clf.joblib")
-        threshold_path = os.path.join(MODEL_DIR, "suggested_threshold.joblib")
+# ----------------------------
+# Load model and threshold
+# ----------------------------
+clf_path = os.path.join(MODEL_DIR, "calibrated_clf.joblib")
+threshold_path = os.path.join(MODEL_DIR, "suggested_threshold.joblib")
 
-        if not os.path.exists(clf_path) or not os.path.exists(threshold_path):
-            raise FileNotFoundError(
-                f"Model files not found in {MODEL_DIR}. "
-                "Make sure 'calibrated_clf.joblib' and 'suggested_threshold.joblib' exist."
-            )
+if not os.path.exists(clf_path) or not os.path.exists(threshold_path):
+    raise FileNotFoundError(
+        f"Model files not found in {MODEL_DIR}. Make sure 'calibrated_clf.joblib' "
+        "and 'suggested_threshold.joblib' exist."
+    )
 
-        clf = joblib.load(clf_path)
-        threshold = joblib.load(threshold_path)
+clf = joblib.load(clf_path)
+# Update threshold here (for more sensitive phishing detection)
+threshold = 0.2  # previously loaded from suggested_threshold.joblib
 
+# ----------------------------
+# Prediction function
+# ----------------------------
 def predict_url(features: dict):
     """
-    Predict whether a URL is safe or malicious based on extracted features.
+    Predict whether a URL is phishing or not based on feature dictionary.
+
+    Args:
+        features (dict): Keys are feature names.
+
+    Returns:
+        dict: {
+            "malicious_prob": float probability of being phishing,
+            "prediction": "malicious" or "safe"
+        }
     """
-    load_model()
     df = pd.DataFrame([features])
     prob = clf.predict_proba(df)[:, 1][0]
     pred = "malicious" if prob >= threshold else "safe"
     return {"malicious_prob": float(prob), "prediction": pred}
+
+if __name__ == "__main__":
+    # Example
+    from extract_features import extract_url_features
+    test_urls = [
+        "https://www.google.com",
+        "http://paypal-login.fake.com"
+    ]
+    for url in test_urls:
+        features = extract_url_features(url)
+        result = predict_url(features)
+        print(f"{url} -> {result}")
